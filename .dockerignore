@@ -1,0 +1,12 @@
+# Artefactos de compilacion y carpetas que no deben entrar al contexto de build
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/.git/
+**/.github/
+**/*.user
+**/logs/
+.sonarqube/
+tests/
+*.md

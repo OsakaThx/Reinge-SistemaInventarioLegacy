@@ -1,0 +1,75 @@
+# =============================================================================
+# docker-compose.yml  -  SistemaInventarioLegacy
+# Laboratorio 7 - Parte A: Containerizacion (app + SQL Server)
+# -----------------------------------------------------------------------------
+# Levanta dos servicios:
+#   db  -> SQL Server 2022 (motor de base de datos del sistema de inventario)
+#   app -> el sistema legado containerizado con el Dockerfile de la raiz
+#
+# El servicio 'app' depende de 'db' y solo arranca cuando el healthcheck de
+# SQL Server reporta 'healthy'. Este patron (app que espera a SQL Server via
+# healthcheck) es el mismo de los microservicios gRPC del curso.
+#
+# Comandos:
+#   docker compose up --build     # construir e iniciar todo
+#   docker compose ps             # ver estado (running / healthy)
+#   docker compose down           # detener y limpiar
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Base de datos: SQL Server 2022
+  # ---------------------------------------------------------------------------
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: inventario-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Reing2026$Fuerte
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - inventario-network
+    restart: unless-stopped
+    healthcheck:
+      # Usa sqlcmd de las mssql-tools18 incluidas en la imagen 2022.
+      # El doble $$ escapa la variable para que la resuelva el shell del
+      # contenedor y no docker compose.
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Aplicacion: sistema de inventario legado
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inventario-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Dentro de la red de Docker el host de la BD es 'db', no 'localhost'.
+      - ConnectionStrings__Inventario=Server=db,1433;Database=InventarioLegacyDB;User Id=sa;Password=Reing2026$Fuerte;TrustServerCertificate=True
+    networks:
+      - inventario-network
+    # La app legada es de consola e interactiva (login por stdin); estas dos
+    # opciones permiten adjuntar una terminal con: docker compose run app
+    stdin_open: true
+    tty: true
+    restart: on-failure
+
+volumes:
+  sqlserver-data:
+    driver: local
+
+networks:
+  inventario-network:
+    driver: bridge
