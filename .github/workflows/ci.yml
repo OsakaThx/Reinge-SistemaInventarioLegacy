@@ -4,20 +4,22 @@
 # Ubicacion: .github/workflows/ci.yml
 # -----------------------------------------------------------------------------
 # PROPOSITO EDUCATIVO
-# Pipeline de integracion continua que protege la reingenieria del sistema:
+# Pipeline de integracion continua construido con el MISMO patron probado del
+# workflow de MuniDenuncia (pasos numerados, permisos minimos, artefactos
+# descargables). Protege la reingenieria del sistema:
 #
-#   1. restore  -> baja las dependencias NuGet
-#   2. build    -> compila en Release (falla si hay errores de compilacion)
-#   3. test     -> ejecuta la suite de tests de caracterizacion (golden master).
-#                  Si un test se rompe (regresion), el pipeline se pone en ROJO.
-#   4. SonarQube-> analisis estatico de calidad (job opcional, solo si hay
-#                  secrets configurados).
+#   PASO 1  Checkout del repositorio
+#   PASO 2  Instalar el SDK de .NET
+#   PASO 3  Restaurar dependencias
+#   PASO 4  Compilar en Release          (falla si hay errores de compilacion)
+#   PASO 5  Ejecutar los tests            (falla -> pipeline ROJO = regresion)
+#   PASO 6  Publicar resultados (.trx)    como artefacto descargable (evidencia)
 #
-# Se ejecuta en cada push y pull_request contra la rama principal.
+# Se ejecuta en cada push y pull_request contra las ramas principales, y puede
+# lanzarse manualmente desde la pestana Actions (workflow_dispatch).
 #
-# NOTA: el enunciado original del laboratorio usaba .NET 8; este proyecto y los
-# microservicios gRPC del curso apuntan a .NET 10, por eso aqui se instala el
-# SDK 10.0.x.
+# NOTA: el proyecto apunta a .NET 10 (ver .csproj), por eso se instala 10.0.x
+# y NO 8.0.x como en el workflow original de MuniDenuncia.
 # =============================================================================
 
 name: CI Reingenieria - SistemaInventarioLegacy
@@ -27,43 +29,66 @@ on:
     branches: [ master, main, 'lab7/**' ]
   pull_request:
     branches: [ master, main ]
-  workflow_dispatch:   # Permite ejecutarlo manualmente desde la pestana Actions
+  workflow_dispatch:   # Permite ejecucion manual desde la UI de GitHub
 
 # Permisos minimos (principio de privilegio minimo)
 permissions:
   contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
 
 jobs:
   # ===========================================================================
   # JOB 1: Compilacion + Tests de caracterizacion
   # ===========================================================================
   build-test:
-    name: Build y Tests de Caracterizacion
+    name: Compilacion y Tests de Caracterizacion
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Checkout del codigo
+      # -----------------------------------------------------------------------
+      # PASO 1: Checkout del codigo
+      # -----------------------------------------------------------------------
+      - name: Checkout codigo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # historial completo (lo aprovecha SonarQube)
 
-      - name: Instalar .NET 10 SDK
+      # -----------------------------------------------------------------------
+      # PASO 2: Configurar el SDK de .NET 10
+      # -----------------------------------------------------------------------
+      - name: Instalar .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      # -----------------------------------------------------------------------
+      # PASO 3: Restaurar dependencias NuGet
+      # -----------------------------------------------------------------------
       - name: Restaurar dependencias
         run: dotnet restore
 
+      # -----------------------------------------------------------------------
+      # PASO 4: Compilar en Release (sin volver a restaurar)
+      # -----------------------------------------------------------------------
       - name: Compilar en Release
         run: dotnet build --no-restore -c Release
 
-      # Ejecuta la suite de tests. --logger trx deja un reporte que se publica
-      # como artefacto descargable (evidencia para el informe).
+      # -----------------------------------------------------------------------
+      # PASO 5: Ejecutar la suite de tests de caracterizacion.
+      # Si un golden master se rompe (regresion), este paso falla y el pipeline
+      # se pone en ROJO. --logger trx deja un reporte descargable.
+      # -----------------------------------------------------------------------
       - name: Ejecutar tests de caracterizacion
-        run: dotnet test --no-build -c Release --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults
+        run: >
+          dotnet test --no-build -c Release
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory ./TestResults
 
+      # -----------------------------------------------------------------------
+      # PASO 6: Publicar los resultados de tests como artefacto descargable.
+      # Los estudiantes pueden bajarlo desde la pestana Actions como evidencia.
+      # -----------------------------------------------------------------------
       - name: Publicar resultados de tests
         if: always()   # subir aunque algun test haya fallado
         uses: actions/upload-artifact@v4
@@ -73,33 +98,32 @@ jobs:
           retention-days: 30
 
   # ===========================================================================
-  # JOB 2: Analisis de calidad con SonarQube
-  # Solo corre si el job de build/test paso Y existen los secrets del servidor.
+  # JOB 2: Analisis de calidad con SonarQube (opcional / no bloqueante)
+  # Solo corre si el job build-test paso. Si no hay secrets configurados,
+  # se OMITE sin romper el pipeline.
   # Configure en el repo: Settings -> Secrets and variables -> Actions
   #   - SONAR_TOKEN
-  #   - SONAR_HOST_URL
-  # NUNCA escriba estos valores directamente en el archivo.
+  #   - SONAR_HOST_URL   (URL PUBLICA; localhost no es alcanzable desde el runner)
   # ===========================================================================
   sonarqube:
-    name: Analisis SonarQube
+    name: Analisis SonarQube (opcional)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: build-test
-    # Evita que el job falle en forks o PRs sin acceso a los secrets.
     if: ${{ github.event_name != 'pull_request' }}
 
     steps:
-      - name: Checkout del codigo
+      - name: Checkout codigo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Instalar .NET 10 SDK
+      - name: Instalar .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Instalar Java 17 (requerido por el scanner de SonarQube)
+      - name: Instalar Java 17 (requerido por SonarScanner)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -109,7 +133,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        # Si no hay token configurado, se omite el analisis sin romper el build.
         run: |
           if [ -z "$SONAR_TOKEN" ] || [ -z "$SONAR_HOST_URL" ]; then
             echo "::warning::SONAR_TOKEN / SONAR_HOST_URL no configurados. Se omite el analisis SonarQube."
