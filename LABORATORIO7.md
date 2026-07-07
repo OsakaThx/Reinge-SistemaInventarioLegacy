@@ -202,17 +202,29 @@ dotnet sonarscanner end /d:sonar.token="<TU_TOKEN>"
 proyecto `inventario-legacy` con su *Quality Gate* (Passed/Failed), y las
 métricas de Bugs, Code Smells, Vulnerabilities, Duplications y Coverage.
 
-### Opción 2 — En el pipeline (CI)
+### Opción 2 — En el pipeline (CI), con SonarCloud
 
-El job `sonarqube` de `ci.yml` ya está listo. Solo configura los *secrets*:
+Como el repo es **público**, SonarCloud (SonarQube Cloud) es gratis sin límite.
+El job `sonarqube` de `ci.yml` ya está conectado al proyecto real:
 
-1. En GitHub: **Settings → Secrets and variables → Actions → New repository secret**
-   - `SONAR_TOKEN` = el token de tu servidor Sonar.
-   - `SONAR_HOST_URL` = URL **pública** del servidor (p. ej. `https://sonarcloud.io`
-     o tu SonarQube expuesto). *No* uses `http://localhost:9000` aquí.
-2. Si los secrets no existen, el job **no falla**: emite un `warning` y se omite
-   (así el pipeline sigue verde en repos sin Sonar).
-3. Con secrets válidos, el análisis se sube automáticamente en cada `push`.
+| Dato | Valor | ¿Sensible? |
+|------|-------|------------|
+| Host | `https://sonarcloud.io` | No — fijo en el `.yml` |
+| Organization Key | `nayahi` | No — fijo en el `.yml` |
+| Project Key | `nayahi_Reinge-SistemaInventarioLegacy` | No — fijo en el `.yml` |
+| Token | (generado en My Account → Security) | **Sí** — GitHub secret `SONAR_TOKEN` |
+
+Solo el token es secreto. Se configura una única vez:
+
+```bash
+gh secret set SONAR_TOKEN --repo nayahi/Reinge-SistemaInventarioLegacy
+```
+o desde la UI: **Settings → Secrets and variables → Actions → New repository secret**.
+
+Si el secret no existe, el job **no falla**: emite un `warning` y se omite (el
+pipeline sigue verde). Con el secret configurado, el análisis se sube
+automáticamente en cada `push` y queda visible en
+`https://sonarcloud.io/project/overview?id=nayahi_Reinge-SistemaInventarioLegacy`.
 
 > Nunca escribas el token dentro del `.yml`. Siempre por *secrets*.
 

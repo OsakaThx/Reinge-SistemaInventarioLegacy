@@ -106,11 +106,18 @@ jobs:
   #   - SONAR_HOST_URL   (URL PUBLICA; localhost no es alcanzable desde el runner)
   # ===========================================================================
   sonarqube:
-    name: Analisis SonarQube (opcional)
+    name: Analisis SonarCloud (opcional)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: build-test
     if: ${{ github.event_name != 'pull_request' }}
+
+    # Claves publicas del proyecto en SonarCloud (no son sensibles; el unico
+    # secreto real es SONAR_TOKEN). https://sonarcloud.io es fijo.
+    env:
+      SONAR_HOST_URL: https://sonarcloud.io
+      SONAR_ORGANIZATION: nayahi
+      SONAR_PROJECT_KEY: nayahi_Reinge-SistemaInventarioLegacy
 
     steps:
       - name: Checkout codigo
@@ -129,19 +136,19 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Analisis SonarQube
+      - name: Analisis SonarCloud
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
-          if [ -z "$SONAR_TOKEN" ] || [ -z "$SONAR_HOST_URL" ]; then
-            echo "::warning::SONAR_TOKEN / SONAR_HOST_URL no configurados. Se omite el analisis SonarQube."
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "::warning::SONAR_TOKEN no configurado. Se omite el analisis SonarCloud."
             exit 0
           fi
           dotnet tool install --global dotnet-sonarscanner
           export PATH="$PATH:$HOME/.dotnet/tools"
           dotnet sonarscanner begin \
-            /k:"inventario-legacy" \
+            /k:"$SONAR_PROJECT_KEY" \
+            /o:"$SONAR_ORGANIZATION" \
             /d:sonar.host.url="$SONAR_HOST_URL" \
             /d:sonar.token="$SONAR_TOKEN"
           dotnet build -c Release
