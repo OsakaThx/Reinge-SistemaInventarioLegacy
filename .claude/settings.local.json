@@ -3,7 +3,26 @@
     "allow": [
       "Bash(Get-ChildItem -Recurse -Force)",
       "Bash(Select-Object -First 50)",
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "Read(//c/Users/nayah/AppData/Local/Temp/claude/C--Users-nayah-source-repos-Reinge-SistemaInventarioLegacy/f15cf4d9-7f4e-44cd-bb8e-fcb16c5b53c2/scratchpad/**)",
+      "Bash(cp \"/c/Users/nayah/OneDrive/Personal/UPI/REINGENIERIA/clase7/Semana7_Laboratorio7_Informe.docx\" lab7.docx)",
+      "Bash(unzip -o lab7.docx -d lab7_extracted)",
+      "Bash(python -c \"import sys,html; print\\(html.unescape\\(sys.stdin.read\\(\\)\\)\\)\")",
+      "Bash(sed -e 's/<w:p[ >]/\\\\n/g' -e 's/<[^>]*>//g' lab7_extracted/word/document.xml)",
+      "Bash(python -c ' *)",
+      "Read(//c/Users/nayah/source/repos/**)",
+      "Read(//c/Users/nayah/**)",
+      "Bash(dotnet --version)",
+      "Bash(git checkout *)",
+      "Bash(mkdir -p tests)",
+      "Bash(dotnet new *)",
+      "Bash(dotnet test *)",
+      "Bash(docker --version)",
+      "Bash(docker info *)",
+      "Bash(docker compose *)",
+      "Bash(docker build *)",
+      "Bash(dotnet sln *)",
+      "mcp__claude_ai_Mermaid_Chart__validate_and_render_mermaid_diagram"
     ]
   }
 }
