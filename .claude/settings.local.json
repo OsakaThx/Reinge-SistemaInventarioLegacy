@@ -22,7 +22,8 @@
       "Bash(docker compose *)",
       "Bash(docker build *)",
       "Bash(dotnet sln *)",
-      "mcp__claude_ai_Mermaid_Chart__validate_and_render_mermaid_diagram"
+      "mcp__claude_ai_Mermaid_Chart__validate_and_render_mermaid_diagram",
+      "Bash(gh run *)"
     ]
   }
 }
