@@ -1,4 +1,18 @@
 <Solution>
+  <Folder Name="/Lab7 - DevOps/">
+    <File Path="Dockerfile" />
+    <File Path="docker-compose.yml" />
+    <File Path=".dockerignore" />
+    <File Path="LABORATORIO7.md" />
+  </Folder>
+  <Folder Name="/Lab7 - DevOps/.github/">
+    <File Path=".github/workflows/ci.yml" />
+  </Folder>
+  <Folder Name="/Lab7 - DevOps/db/">
+    <File Path="db/migracion_001_normalizar_categorias.sql" />
+    <File Path="db/rollback_001_normalizar_categorias.sql" />
+    <File Path="db/validacion_integridad.sql" />
+  </Folder>
   <Project Path="Reinge-SistemaInventarioLegacy/Reinge-SistemaInventarioLegacy.csproj" />
   <Project Path="tests/SistemaInventarioLegacy.Tests/SistemaInventarioLegacy.Tests.csproj" />
 </Solution>
