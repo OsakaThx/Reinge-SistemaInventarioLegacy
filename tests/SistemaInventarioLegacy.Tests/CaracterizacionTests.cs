@@ -70,7 +70,7 @@ namespace SistemaInventarioLegacy.Tests
             Assert.Equal(250m,     r.Subtotal);
             Assert.Equal(37.50m,   r.Descuento);
             Assert.Equal(27.625m,  r.Impuesto);
-            Assert.Equal(999m, r.Total);   // golden master (comportamiento actual)
+            Assert.Equal(240.125m, r.Total); // golden master (comportamiento actual)
         }
 
         // ---------------------------------------------------------------------
