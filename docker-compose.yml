@@ -25,7 +25,7 @@ services:
     container_name: inventario-sqlserver
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=Reing2026$Fuerte
+      - MSSQL_SA_PASSWORD=Reing2026$$Fuerte
       - MSSQL_PID=Developer
     ports:
       - "1433:1433"
@@ -57,7 +57,7 @@ services:
         condition: service_healthy
     environment:
       # Dentro de la red de Docker el host de la BD es 'db', no 'localhost'.
-      - ConnectionStrings__Inventario=Server=db,1433;Database=InventarioLegacyDB;User Id=sa;Password=Reing2026$Fuerte;TrustServerCertificate=True
+     - ConnectionStrings__Inventario=Server=db,1433;Database=InventarioLegacyDB;User Id=sa;Password=Reing2026$$Fuerte;TrustServerCertificate=True
     networks:
       - inventario-network
     # La app legada es de consola e interactiva (login por stdin); estas dos
